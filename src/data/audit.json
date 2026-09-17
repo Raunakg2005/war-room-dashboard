@@ -1,0 +1,22 @@
+{
+ "rows": 243,
+ "uniqueIds": 243,
+ "regionVariants": {
+  "east asia": 1,
+  "europe": 1
+ },
+ "insuranceBlank": [
+  "SGL-1185",
+  "SGL-1212"
+ ],
+ "componentsReconcile": 243,
+ "marginReconcile": 243,
+ "marginPctReconcile": 243,
+ "heldCount": 54,
+ "heldZeroRevenue": 54,
+ "heldDifotMet": 0,
+ "actualBlankOutsideHeld": 0,
+ "meridianConcentrationField": 57.6,
+ "meridianRevenueShareRecomputed": 58.3,
+ "totalMargin": -189619812.27
+}

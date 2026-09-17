@@ -6,7 +6,7 @@ import {
 } from "recharts";
 import { useAnimate, useChartColors } from "./providers";
 import { BarValue, ChartBox, PADDED } from "./charts";
-import { money, pct } from "@/lib/analytics";
+import { int, money, pct } from "@/lib/analytics";
 import type { costBridge, pareto, penaltyRule, stressTest, tenure } from "@/lib/deep";
 
 type C = ReturnType<typeof useChartColors>;
@@ -142,7 +142,7 @@ export function BreakEvenChart({ data, height = 320 }: { data: { key: string; up
           }} />
           <Bar dataKey="uplift" radius={4} maxBarSize={26} isAnimationActive={anim} animationDuration={600}>
             {data.map((d) => <Cell key={d.key} fill={d.uplift > 1 ? c.loss : d.uplift > 0 ? c.gold : c.gain} />)}
-            <LabelList dataKey="uplift" content={(p) => <BarValue {...p} text={(Number(p.value) > 0 ? "+" : "") + pct(Number(p.value))} c={c} />} />
+            <LabelList dataKey="uplift" content={(p) => <BarValue {...p} text={(Number(p.value) > 0 ? "+" : "") + pct(Number(p.value))} c={c} minX={4 + 210} />} />
           </Bar>
         </BarChart>
       </ResponsiveContainer>
@@ -152,17 +152,34 @@ export function BreakEvenChart({ data, height = 320 }: { data: { key: string; up
 
 /* ---------------- Penalty rule ---------------- */
 
+/** Round numbers that sit evenly apart on a square-root axis. */
+function sqrtTicks(max: number) {
+  const nice = (v: number) => {
+    const m = 10 ** Math.floor(Math.log10(v));
+    return Math.ceil(v / m) * m;
+  };
+  const top = nice(max);
+  const out = [0];
+  for (const f of [1 / 16, 1 / 4, 9 / 16]) {
+    const t = nice(top * f);
+    if (t > out[out.length - 1] && t < top) out.push(t);
+  }
+  out.push(top);
+  return out;
+}
+
 export function PenaltyScatter({ data, height = 320 }: { data: ReturnType<typeof penaltyRule>; height?: number }) {
   const c = useChartColors();
   const anim = useAnimate();
   const maxD = Math.max(1, ...data.delivered.map((p) => p.x));
   const maxH = Math.max(1, ...data.held.map((p) => p.x));
+  const xTicks = sqrtTicks(Math.max(maxD, maxH));
   return (
     <ChartBox height={height} empty={!data.lateCount}>
       <ResponsiveContainer>
         <ScatterChart margin={{ top: 12, right: 20, bottom: 18, left: 4 }}>
           <CartesianGrid stroke={c.grid} />
-          <XAxis type="number" dataKey="x" scale="sqrt" tick={tick(c)} tickFormatter={(v) => `${v}`} axisLine={false} tickLine={false}
+          <XAxis type="number" dataKey="x" scale="sqrt" domain={[0, xTicks[xTicks.length - 1]]} ticks={xTicks} tick={tick(c)} tickFormatter={(v) => int(v)} axisLine={false} tickLine={false}
             label={{ value: "Cargo value × days late ($M·days, √ scale)", position: "insideBottom", offset: -10, fill: c.ink3, fontSize: 11 }} />
           <YAxis type="number" dataKey="y" scale="sqrt" tick={tick(c)} tickFormatter={(v) => `$${v}M`} axisLine={false} tickLine={false} width={52} />
           <ZAxis range={[36, 36]} />

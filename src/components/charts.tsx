@@ -16,19 +16,24 @@ type Colors = ReturnType<typeof useChartColors>;
 interface BarValueProps {
   x?: number | string; y?: number | string; width?: number | string; height?: number | string;
   value?: unknown; text: string; c: Colors;
+  /** Left edge of the plot area; outside labels never cross it. */
+  minX?: number;
 }
 
 /** Horizontal-bar value label: inside the bar when it fits, otherwise just past the bar's outer end. */
-export function BarValue({ x, y, width, height, value, text, c }: BarValueProps) {
+export function BarValue({ x, y, width, height, value, text, c, minX = 0 }: BarValueProps) {
   const x0 = Number(x), w0 = Number(width), yy = Number(y) + Number(height) / 2;
   if (!Number.isFinite(x0) || !Number.isFinite(w0)) return null;
   const left = Math.min(x0, x0 + w0);
   const w = Math.abs(w0);
   const neg = Number(value) < 0;
-  const fits = w >= text.length * 6.6 + 14;
+  const tw = text.length * 6.6;
+  const fits = w >= tw + 14;
+  // A small negative bar with no room on its left gets its label past the zero line instead.
+  const flip = !fits && neg && left - 6 - tw < minX;
   const props = fits
     ? { x: neg ? left + 7 : left + w - 7, anchor: (neg ? "start" : "end") as "start" | "end", fill: c.panel }
-    : { x: neg ? left - 6 : left + w + 6, anchor: (neg ? "end" : "start") as "start" | "end", fill: c.ink2 };
+    : { x: neg && !flip ? left - 6 : left + w + 6, anchor: (neg && !flip ? "end" : "start") as "start" | "end", fill: c.ink2 };
   return (
     <text x={props.x} y={yy} dy="0.35em" textAnchor={props.anchor} fill={props.fill} fontSize={11} fontWeight={600} className="tabular">
       {text}
@@ -148,7 +153,7 @@ export function SignedBars({
               />
             ))}
             {showLabels && (
-              <LabelList dataKey="value" content={(p) => <BarValue {...p} text={money(Number(p.value))} c={c} />} />
+              <LabelList dataKey="value" content={(p) => <BarValue {...p} text={money(Number(p.value))} c={c} minX={4 + labelWidth} />} />
             )}
           </Bar>
         </BarChart>
